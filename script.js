@@ -94,7 +94,7 @@ async function renderHistory() {
 const history = getHistory();
 const container = document.getElementById("history");
 
-```
+
 container.innerHTML = "";
 
 if (history.length === 0) {
