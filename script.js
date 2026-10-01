@@ -1,4 +1,4 @@
-```javascript
+javascript
 function loadVideo() {
   const input = document.getElementById("url").value.trim();
 
@@ -47,4 +47,4 @@ function loadVideo() {
     </iframe>
   `;
 }
-```
+
