@@ -1,31 +1,43 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>YouTube Player</title>
-
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Player</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <h1>YouTube Player</h1>
+    <h1>YouTube Player</h1>
 
-  <div class="input-area">
-    <input
-      id="url"
-      type="text"
-      placeholder="YouTube URLまたは動画IDを入力"
-    >
+    <div class="input-area">
+        <input
+            id="url"
+            type="text"
+            placeholder="YouTube URLまたは動画IDを入力"
+        >
+        <button onclick="loadVideo()">再生</button>
+    </div>
 
-    <button onclick="loadVideo()">再生</button>
-  </div>
+    <div id="player"></div>
 
-  <div id="player"></div>
+    <section class="history-section">
+        <div class="history-header">
+            <h2>再生履歴</h2>
+            <button onclick="clearHistory()" class="delete-all">
+                すべて削除
+            </button>
+        </div>
 
-  <script src="script.js"></script>
+        <div id="history">
+            <p>履歴はありません。</p>
+        </div>
+    </section>
+
+    <script src="script.js" defer></script>
 
 </body>
 </html>
+```
