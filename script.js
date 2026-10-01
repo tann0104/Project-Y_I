@@ -88,17 +88,120 @@ renderHistory();
 
 // Display history
 
-function renderHistory() {
+// Display history
+
+async function renderHistory() {
 const history = getHistory();
 const container = document.getElementById("history");
 
-
+```
 container.innerHTML = "";
 
 if (history.length === 0) {
     container.textContent = "履歴はありません。";
     return;
 }
+
+history.forEach(item => {
+    const element = document.createElement("div");
+    element.className = "history-item";
+
+    const image = document.createElement("img");
+    image.src = `https://img.youtube.com/vi/${item.id}/mqdefault.jpg`;
+    image.alt = "Video thumbnail";
+
+    const info = document.createElement("div");
+    info.className = "history-info";
+
+    const title = document.createElement("strong");
+    title.textContent = item.title || "タイトルを取得中...";
+
+    const date = document.createElement("p");
+    date.textContent = item.date;
+
+    info.appendChild(title);
+    info.appendChild(date);
+
+    const playButton = document.createElement("button");
+    playButton.textContent = "再生";
+    playButton.addEventListener("click", () => {
+        loadVideo(item.id);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "削除";
+    deleteButton.className = "delete-button";
+
+    deleteButton.addEventListener("click", () => {
+        removeHistory(item.id);
+    });
+
+    element.appendChild(image);
+    element.appendChild(info);
+    element.appendChild(playButton);
+    element.appendChild(deleteButton);
+
+    container.appendChild(element);
+
+    // Fetch title if not saved
+    if (!item.title) {
+        fetchVideoTitle(item.id);
+    }
+});
+
+
+}
+
+// Fetch YouTube title using oEmbed
+
+async function fetchVideoTitle(videoId) {
+try {
+const response = await fetch(
+`https://www.youtube.com/oembed?url=${encodeURIComponent(
+                `https://www.youtube.com/watch?v=${videoId}`
+)}&format=json`
+);
+
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+
+    let history = getHistory();
+
+    history = history.map(item => {
+        if (item.id === videoId) {
+            return {
+                ...item,
+                title: data.title,
+                author: data.author_name
+            };
+        }
+
+        return item;
+    });
+
+    localStorage.setItem("youtubeHistory", JSON.stringify(history));
+
+    // Update displayed title
+    const titles = document.querySelectorAll(".history-item");
+
+    titles.forEach(element => {
+        const buttons = element.querySelectorAll("button");
+
+        if (buttons.length && buttons[0].onclick === null) {
+            // No action needed
+        }
+    });
+
+    renderHistory();
+
+} catch (error) {
+    console.error("Failed to fetch video title:", error);
+}
+
+
+
 
 history.forEach(item => {
     const element = document.createElement("div");
