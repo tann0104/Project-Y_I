@@ -1,73 +1,68 @@
 // YouTube Player
 
+
 function loadVideo(videoInput = null) {
-const input = videoInput || document.getElementById("url").value.trim();
+    const input = videoInput || document.getElementById("url").value.trim();
 
+    let videoId = "";
+    let isShorts = false;
 
-let videoId = "";
+    try {
+        // URLとして解析
+        const url = new URL(
+            input.startsWith("http") ? input : `https://${input}`
+        );
 
-try {
-    const url = new URL(input);
+        const hostname = url.hostname.replace(/^www\./, "");
 
-    if (
-        url.hostname === "www.youtube.com" ||
-        url.hostname === "youtube.com"
-    ) {
-        videoId = url.searchParams.get("v") || "";
-
-        if (!videoId) {
+        if (hostname === "youtube.com") {
             const match = url.pathname.match(
-                /^\/(?:embed|shorts|live)\/([^/]+)/
+                /^\/(embed|shorts|live)\/([^/?]+)/
             );
 
+            if (match) {
+                videoId = match[2];
+                isShorts = match[1] === "shorts";
+            } else {
+                videoId = url.searchParams.get("v") || "";
+            }
+
+        } else if (hostname === "youtu.be") {
+            videoId = url.pathname.split("/").filter(Boolean)[0] || "";
+
+        } else if (hostname === "youtube-nocookie.com") {
+            const match = url.pathname.match(/^\/embed\/([^/?]+)/);
             if (match) videoId = match[1];
         }
+
+    } catch {
+        // URLではなく動画IDとして扱う
+        videoId = input;
     }
 
-    else if (
-        url.hostname === "youtu.be" ||
-        url.hostname === "www.youtu.be"
-    ) {
-        videoId = url.pathname.substring(1).split("/")[0];
+    // 動画IDのチェック
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+        alert("Invalid YouTube video ID or URL.");
+        return;
     }
 
-    else if (
-        url.hostname === "www.youtube-nocookie.com" ||
-        url.hostname === "youtube-nocookie.com"
-    ) {
-        const match = url.pathname.match(/^\/embed\/([^/]+)/);
+    // 動画を表示
+    const player = document.getElementById("player");
+    player.innerHTML = "";
+    player.className = isShorts ? "shorts-player" : "normal-player";
 
-        if (match) videoId = match[1];
-    }
+    const iframe = document.createElement("iframe");
 
-} catch {
-    videoId = input;
+    iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}`;
+    iframe.title = "YouTube video player";
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+    iframe.allowFullscreen = true;
+
+    player.appendChild(iframe);
+
+    // 履歴に保存
+    addHistory(videoId, isShorts);
 }
-
-if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
-    alert("Invalid YouTube video ID or URL.");
-    return;
-}
-
-// Display video
-const player = document.getElementById("player");
-player.innerHTML = "";
-
-const iframe = document.createElement("iframe");
-
-iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}`;
-iframe.title = "YouTube video player";
-iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-iframe.allowFullscreen = true;
-
-player.appendChild(iframe);
-
-// Save history
-addHistory(videoId);
-
-
-}
-
 
 // History
 
