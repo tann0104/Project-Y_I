@@ -1,6 +1,7 @@
 // YouTube Player
 
 
+
 function loadVideo(videoInput = null) {
     const input = videoInput || document.getElementById("url").value.trim();
 
@@ -63,7 +64,6 @@ function loadVideo(videoInput = null) {
     // 履歴に保存
     addHistory(videoId, isShorts);
 }
-
 // History
 
 function getHistory() {
