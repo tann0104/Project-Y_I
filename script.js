@@ -48,3 +48,9 @@ function loadVideo() {
   `;
 }
 
+// Press Enter to load video
+document.getElementById("url").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        loadVideo();
+    }
+});
