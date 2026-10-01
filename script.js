@@ -1,4 +1,4 @@
-javascript
+
 function loadVideo() {
   const input = document.getElementById("url").value.trim();
 
