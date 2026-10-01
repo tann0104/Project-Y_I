@@ -9,16 +9,25 @@ let videoId = "";
 try {
     const url = new URL(input);
 
-    if (url.hostname === "www.youtube.com" || url.hostname === "youtube.com") {
+    if (
+        url.hostname === "www.youtube.com" ||
+        url.hostname === "youtube.com"
+    ) {
         videoId = url.searchParams.get("v") || "";
 
         if (!videoId) {
-            const match = url.pathname.match(/^\/embed\/([^/]+)/);
+            const match = url.pathname.match(
+                /^\/(?:embed|shorts|live)\/([^/]+)/
+            );
+
             if (match) videoId = match[1];
         }
     }
 
-    else if (url.hostname === "youtu.be") {
+    else if (
+        url.hostname === "youtu.be" ||
+        url.hostname === "www.youtu.be"
+    ) {
         videoId = url.pathname.substring(1).split("/")[0];
     }
 
@@ -27,6 +36,7 @@ try {
         url.hostname === "youtube-nocookie.com"
     ) {
         const match = url.pathname.match(/^\/embed\/([^/]+)/);
+
         if (match) videoId = match[1];
     }
 
@@ -57,6 +67,7 @@ addHistory(videoId);
 
 
 }
+
 
 // History
 
