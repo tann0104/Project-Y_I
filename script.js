@@ -1,49 +1,57 @@
 
 // YouTube Player
 
+
 function loadVideo(videoInput = null) {
-    const input = videoInput || document.getElementById("url").value.trim();
+    const input = String(
+        videoInput ?? document.getElementById("url").value
+    ).trim();
 
     let videoId = "";
     let isShorts = false;
 
-    try {
-        const url = new URL(
-            input.startsWith("http") ? input : `https://${input}`
-        );
-
-        const hostname = url.hostname.replace(/^www\./, "");
-
-        if (hostname === "youtube.com") {
-            const match = url.pathname.match(
-                /^\/(embed|shorts|live)\/([^/?]+)/
+    // まず11文字の動画IDか確認
+    if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
+        videoId = input;
+    } else {
+        try {
+            const url = new URL(
+                /^https?:\/\//i.test(input) ? input : `https://${input}`
             );
 
-            if (match) {
-                videoId = match[2];
-                isShorts = match[1] === "shorts";
-            } else {
-                videoId = url.searchParams.get("v") || "";
+            const hostname = url.hostname.replace(/^www\./, "");
+
+            if (hostname === "youtube.com") {
+                const match = url.pathname.match(
+                    /^\/(embed|shorts|live)\/([^/?]+)/
+                );
+
+                if (match) {
+                    videoId = match[2];
+                    isShorts = match[1] === "shorts";
+                } else {
+                    videoId = url.searchParams.get("v") || "";
+                }
+
+            } else if (hostname === "youtu.be") {
+                videoId = url.pathname.split("/").filter(Boolean)[0] || "";
+
+            } else if (hostname === "youtube-nocookie.com") {
+                const match = url.pathname.match(/^\/embed\/([^/?]+)/);
+                if (match) videoId = match[1];
             }
 
-        } else if (hostname === "youtu.be") {
-            videoId = url.pathname.split("/").filter(Boolean)[0] || "";
-
-        } else if (hostname === "youtube-nocookie.com") {
-            const match = url.pathname.match(/^\/embed\/([^/?]+)/);
-            if (match) videoId = match[1];
+        } catch (error) {
+            console.error("URL parsing error:", error);
         }
-
-    } catch {
-        videoId = input;
     }
 
     if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+        console.error("Invalid input:", input);
         alert("Invalid YouTube video ID or URL.");
         return;
     }
 
-    // Display video
     const player = document.getElementById("player");
 
     player.innerHTML = "";
@@ -58,10 +66,8 @@ function loadVideo(videoInput = null) {
 
     player.appendChild(iframe);
 
-    // Save history
     addHistory(videoId, isShorts);
 }
-
 
 // History
 
