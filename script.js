@@ -686,7 +686,7 @@ if ("IntersectionObserver" in window) {
 
     youtubeLoadObserver.observe(sentinel);
 }
-
+}
 
 // ========================================
 // YouTube Search: Show 8 at a Time
