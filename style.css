@@ -151,22 +151,14 @@ h2 {
 
 /* URL Input Area */
 
-```css
 .input-area {
   display: flex;
   justify-content: center;
   align-items: stretch;
   gap: 10px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   width: 100%;
 }
-
-.input-area input {
-  flex: 1 1 auto;
-  min-width: 0;
-  width: 100%;
-}
-```
 
 /* Input */
 
