@@ -7,7 +7,7 @@
 // ========================================
 
 // Replace this with your actual Cloudflare Worker URL.
-const WORKER_URL = "https://y-iapi.pages.dev";
+const WORKER_URL = "https://y-iapi.tann0104.workers.dev";
 
 const HISTORY_KEY = "youtubeHistory";
 const MAX_HISTORY = 50;
