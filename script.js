@@ -966,7 +966,7 @@ renderHistory();
 // ========================================
 
 const WORKER_URL =
-    "https://YOUR-WORKER.YOUR-SUBDOMAIN.workers.dev";
+    "https://project-y-i.tann0104.workers.dev/";
 
 async function searchYouTubeVideos(query) {
     const status = document.getElementById(
