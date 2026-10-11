@@ -334,6 +334,220 @@ function addHistory(
         date: new Date().toLocaleString("ja-JP")
     });
 
+    
+/* ========================================
+   YouTube Data API v3 Search
+   ======================================== */
+
+// Paste your Google Cloud API key here.
+// Restrict the key to YouTube Data API v3
+// and your website's HTTP referrers.
+const YOUTUBE_API_KEY = "YOUR_API_KEY";
+
+let youtubeSearchInProgress = false;
+
+async function searchYouTubeVideos(query) {
+    const url = new URL(
+        "https://www.googleapis.com/youtube/v3/search"
+    );
+
+    url.search = new URLSearchParams({
+        key: YOUTUBE_API_KEY,
+        part: "snippet",
+        type: "video",
+        maxResults: "10",
+        q: query,
+        safeSearch: "moderate"
+    }).toString();
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+        const reason =
+            data?.error?.errors?.[0]?.reason || "";
+
+        if (
+            response.status === 403 &&
+            (
+                reason === "quotaExceeded" ||
+                reason === "dailyLimitExceeded"
+            )
+        ) {
+            throw new Error(
+                "YouTube search quota exceeded. Try again later."
+            );
+        }
+
+        if (
+            response.status === 403 &&
+            reason === "keyInvalid"
+        ) {
+            throw new Error(
+                "Invalid API key. Check your Google Cloud settings."
+            );
+        }
+
+        throw new Error(
+            data?.error?.message ||
+            `YouTube API error: ${response.status}`
+        );
+    }
+
+    return (data.items || [])
+        .filter(item => item.id?.videoId)
+        .map(item => ({
+            id: item.id.videoId,
+            title: item.snippet?.title || "Untitled",
+            channel: item.snippet?.channelTitle || "",
+            thumbnail:
+                item.snippet?.thumbnails?.medium?.url ||
+                item.snippet?.thumbnails?.default?.url ||
+                ""
+        }));
+}
+
+
+// ========================================
+// Render Search Results
+// ========================================
+
+function renderYouTubeSearchResults(videos) {
+    const container = document.getElementById(
+        "youtube-search-results"
+    );
+
+    if (!container) return;
+
+    container.replaceChildren();
+
+    if (videos.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "youtube-search-empty";
+        empty.textContent = "動画が見つかりませんでした。";
+        container.appendChild(empty);
+        return;
+    }
+
+    videos.forEach(video => {
+        const card = document.createElement("article");
+        card.className = "youtube-result-item";
+
+        const image = document.createElement("img");
+        image.className = "youtube-result-thumbnail";
+        image.src = video.thumbnail;
+        image.alt = video.title;
+        image.loading = "lazy";
+
+        const info = document.createElement("div");
+        info.className = "youtube-result-info";
+
+        const title = document.createElement("strong");
+        title.className = "youtube-result-title";
+        title.textContent = video.title;
+
+        const channel = document.createElement("p");
+        channel.className = "youtube-result-channel";
+        channel.textContent = video.channel;
+
+        const playButton = document.createElement("button");
+        playButton.type = "button";
+        playButton.className = "youtube-result-play";
+        playButton.textContent = "▶ 再生";
+
+        playButton.addEventListener("click", () => {
+            // Use the existing player and history system.
+            loadYouTube(video.id);
+
+            // Scroll the player into view.
+            document.getElementById("player")?.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        });
+
+        info.append(title, channel, playButton);
+        card.append(image, info);
+        container.appendChild(card);
+    });
+}
+
+
+// ========================================
+// Search Form
+// ========================================
+
+const youtubeSearchForm = document.getElementById(
+    "youtube-search-form"
+);
+
+if (youtubeSearchForm) {
+    youtubeSearchForm.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        if (youtubeSearchInProgress) return;
+
+        const input = document.getElementById(
+            "youtube-search-input"
+        );
+
+        const status = document.getElementById(
+            "youtube-search-status"
+        );
+
+        const button = document.getElementById(
+            "youtube-search-button"
+        );
+
+        const results = document.getElementById(
+            "youtube-search-results"
+        );
+
+        const query = input.value.trim();
+
+        if (!query) {
+            status.textContent = "検索キーワードを入力してください。";
+            return;
+        }
+
+        if (
+            !YOUTUBE_API_KEY ||
+            YOUTUBE_API_KEY === "YOUR_API_KEY"
+        ) {
+            status.textContent =
+                "YouTube API キーを設定してください。";
+            return;
+        }
+
+        youtubeSearchInProgress = true;
+        button.disabled = true;
+        button.textContent = "検索中...";
+        status.textContent = "YouTube を検索しています...";
+        results.replaceChildren();
+
+        try {
+            const videos = await searchYouTubeVideos(query);
+
+            renderYouTubeSearchResults(videos);
+
+            status.textContent =
+                `${videos.length} 件の動画が見つかりました。`;
+
+        } catch (error) {
+            console.error("YouTube search failed:", error);
+
+            status.textContent =
+                `検索に失敗しました: ${error.message}`;
+
+        } finally {
+            youtubeSearchInProgress = false;
+            button.disabled = false;
+            button.textContent = "検索";
+        }
+    });
+}
+
+
     // --------------------------------
     // Maximum 50
     // --------------------------------
