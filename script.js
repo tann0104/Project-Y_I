@@ -10,14 +10,12 @@ const WORKER_URL = "https://y-iapi.tann0104.workers.dev";
 
 const HISTORY_KEY = "youtubeHistory";
 const MAX_HISTORY = 50;
-
 const YOUTUBE_BATCH_SIZE = 8;
+const MAX_YOUTUBE_RESULTS = 50;
 
 let youtubeSearchInProgress = false;
 let allYouTubeResults = [];
 let displayedYouTubeCount = 0;
-let youtubeLoadObserver = null;
-
 
 // ========================================
 // DOM Helpers
@@ -32,7 +30,6 @@ function setText(id, message) {
     if (element) element.textContent = message;
 }
 
-
 // ========================================
 // YouTube URL Parser
 // ========================================
@@ -46,14 +43,10 @@ function parseYouTubeVideo(input) {
 
     try {
         const url = new URL(
-            /^https?:\/\//i.test(value)
-                ? value
-                : `https://${value}`
+            /^https?:\/\//i.test(value) ? value : `https://${value}`
         );
 
-        const host = url.hostname
-            .replace(/^www\./i, "")
-            .toLowerCase();
+        const host = url.hostname.replace(/^www\./i, "").toLowerCase();
 
         let id = "";
         let isShorts = false;
@@ -76,16 +69,11 @@ function parseYouTubeVideo(input) {
         } else if (host === "youtu.be") {
             id = url.pathname.split("/").filter(Boolean)[0] || "";
         } else if (host === "youtube-nocookie.com") {
-            const match = url.pathname.match(
-                /^\/embed\/([^/?#]+)/
-            );
-
+            const match = url.pathname.match(/^\/embed\/([^/?#]+)/);
             if (match) id = match[1];
         }
 
-        if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) {
-            return null;
-        }
+        if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) return null;
 
         return { id, isShorts };
     } catch (error) {
@@ -93,7 +81,6 @@ function parseYouTubeVideo(input) {
         return null;
     }
 }
-
 
 // ========================================
 // Load Video
@@ -116,7 +103,6 @@ function loadVideo(videoInput = null) {
     }
 }
 
-
 // ========================================
 // Load YouTube
 // ========================================
@@ -137,6 +123,7 @@ function loadYouTube(input) {
     }
 
     const urlInput = getElement("url");
+
     if (urlInput) {
         urlInput.value = video.isShorts
             ? `https://www.youtube.com/shorts/${video.id}`
@@ -144,15 +131,10 @@ function loadYouTube(input) {
     }
 
     player.replaceChildren();
-    player.className = video.isShorts
-        ? "shorts-player"
-        : "normal-player";
+    player.className = video.isShorts ? "shorts-player" : "normal-player";
 
     const iframe = document.createElement("iframe");
-
-    iframe.src =
-        `https://www.youtube-nocookie.com/embed/${video.id}`;
-
+    iframe.src = `https://www.youtube-nocookie.com/embed/${video.id}`;
     iframe.title = "YouTube video player";
     iframe.allow =
         "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
@@ -160,10 +142,8 @@ function loadYouTube(input) {
     iframe.referrerPolicy = "strict-origin-when-cross-origin";
 
     player.appendChild(iframe);
-
     addHistory(video.id, video.isShorts, "youtube");
 }
-
 
 // ========================================
 // TikTok Detection
@@ -171,23 +151,18 @@ function loadYouTube(input) {
 
 function isTikTok(input) {
     try {
+        const value = String(input).trim();
         const url = new URL(
-            /^https?:\/\//i.test(String(input).trim())
-                ? String(input).trim()
-                : `https://${String(input).trim()}`
+            /^https?:\/\//i.test(value) ? value : `https://${value}`
         );
 
-        const host = url.hostname
-            .replace(/^www\./i, "")
-            .toLowerCase();
+        const host = url.hostname.replace(/^www\./i, "").toLowerCase();
 
-        return host === "tiktok.com" ||
-            host.endsWith(".tiktok.com");
+        return host === "tiktok.com" || host.endsWith(".tiktok.com");
     } catch {
         return false;
     }
 }
-
 
 // ========================================
 // TikTok URL Parser
@@ -200,42 +175,28 @@ function parseTikTokVideoId(input) {
 
     try {
         const url = new URL(
-            /^https?:\/\//i.test(value)
-                ? value
-                : `https://${value}`
+            /^https?:\/\//i.test(value) ? value : `https://${value}`
         );
 
-        const host = url.hostname
-            .replace(/^www\./i, "")
-            .toLowerCase();
+        const host = url.hostname.replace(/^www\./i, "").toLowerCase();
 
-        if (
-            host !== "tiktok.com" &&
-            !host.endsWith(".tiktok.com")
-        ) {
+        if (host !== "tiktok.com" && !host.endsWith(".tiktok.com")) {
             return null;
         }
 
-        const playerMatch = url.pathname.match(
-            /^\/player\/v1\/(\d+)/
-        );
-
+        const playerMatch = url.pathname.match(/^\/player\/v1\/(\d+)/);
         if (playerMatch) return playerMatch[1];
 
-        const videoMatch = url.pathname.match(
-            /\/video\/(\d+)/
-        );
-
+        const videoMatch = url.pathname.match(/\/video\/(\d+)/);
         if (videoMatch) return videoMatch[1];
 
-        // Short links need redirect resolution.
+        // Short links require redirect resolution.
         return null;
     } catch (error) {
         console.error("TikTok URL parsing failed:", error);
         return null;
     }
 }
-
 
 // ========================================
 // Load TikTok
@@ -259,6 +220,7 @@ function loadTikTok(input) {
     }
 
     const urlInput = getElement("url");
+
     if (urlInput) {
         urlInput.value = `https://www.tiktok.com/video/${videoId}`;
     }
@@ -267,19 +229,14 @@ function loadTikTok(input) {
     player.className = "tiktok-player";
 
     const iframe = document.createElement("iframe");
-
-    iframe.src =
-        `https://www.tiktok.com/player/v1/${videoId}`;
-
+    iframe.src = `https://www.tiktok.com/player/v1/${videoId}`;
     iframe.title = "TikTok video player";
     iframe.allow = "fullscreen";
     iframe.allowFullscreen = true;
 
     player.appendChild(iframe);
-
     addHistory(videoId, false, "tiktok");
 }
-
 
 // ========================================
 // History: Read and Save
@@ -299,25 +256,17 @@ function getHistory() {
 
 function saveHistory(history) {
     try {
-        localStorage.setItem(
-            HISTORY_KEY,
-            JSON.stringify(history)
-        );
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
     } catch (error) {
         console.error("Failed to save history:", error);
     }
 }
 
-
 // ========================================
 // History: Add
 // ========================================
 
-function addHistory(
-    videoId,
-    isShorts = false,
-    platform = "youtube"
-) {
+function addHistory(videoId, isShorts = false, platform = "youtube") {
     let history = getHistory();
 
     history = history.filter(item => !(
@@ -334,9 +283,7 @@ function addHistory(
         date: new Date().toLocaleString("ja-JP")
     });
 
-    history = history.slice(0, MAX_HISTORY);
-
-    saveHistory(history);
+    saveHistory(history.slice(0, MAX_HISTORY));
     renderHistory();
 
     if (platform === "youtube") {
@@ -345,7 +292,6 @@ function addHistory(
         fetchTikTokTitle(videoId);
     }
 }
-
 
 // ========================================
 // History: Render
@@ -381,7 +327,6 @@ function renderHistory() {
 
         image.alt = `${platform} video thumbnail`;
         image.loading = "lazy";
-
         image.onerror = () => {
             image.style.display = "none";
         };
@@ -399,8 +344,7 @@ function renderHistory() {
         date.textContent = item.date || "";
 
         const platformLabel = document.createElement("small");
-        platformLabel.textContent =
-            platform === "tiktok" ? "TikTok" : "YouTube";
+        platformLabel.textContent = platform === "tiktok" ? "TikTok" : "YouTube";
 
         info.append(title, author, date, platformLabel);
 
@@ -412,9 +356,7 @@ function renderHistory() {
             if (platform === "tiktok") {
                 loadTikTok(item.id);
             } else if (item.isShorts) {
-                loadYouTube(
-                    `https://www.youtube.com/shorts/${item.id}`
-                );
+                loadYouTube(`https://www.youtube.com/shorts/${item.id}`);
             } else {
                 loadYouTube(item.id);
             }
@@ -429,17 +371,10 @@ function renderHistory() {
             removeHistory(item.id, platform);
         });
 
-        element.append(
-            image,
-            info,
-            playButton,
-            deleteButton
-        );
-
+        element.append(image, info, playButton, deleteButton);
         container.appendChild(element);
     });
 }
-
 
 // ========================================
 // History: Fetch Titles
@@ -497,10 +432,7 @@ async function fetchTikTokTitle(videoId) {
         const data = await response.json();
 
         const history = getHistory().map(item => {
-            if (
-                item.id === videoId &&
-                item.platform === "tiktok"
-            ) {
+            if (item.id === videoId && item.platform === "tiktok") {
                 return {
                     ...item,
                     title: data.title || "TikTok",
@@ -518,7 +450,6 @@ async function fetchTikTokTitle(videoId) {
     }
 }
 
-
 // ========================================
 // History: Delete
 // ========================================
@@ -534,14 +465,11 @@ function removeHistory(videoId, platform = "youtube") {
 }
 
 function clearHistory() {
-    if (!confirm("すべての再生履歴を削除しますか？")) {
-        return;
-    }
+    if (!confirm("すべての再生履歴を削除しますか？")) return;
 
     localStorage.removeItem(HISTORY_KEY);
     renderHistory();
 }
-
 
 // ========================================
 // YouTube Search: Request Worker
@@ -565,16 +493,12 @@ async function searchYouTubeVideos(query) {
 
     if (!response.ok) {
         throw new Error(
-            data.error ||
-            data.message ||
-            `Worker error: ${response.status}`
+            data.error || data.message || `Worker error: ${response.status}`
         );
     }
 
     if (!Array.isArray(data.items)) {
-        throw new Error(
-            "検索結果の形式が正しくありません。"
-        );
+        throw new Error("検索結果の形式が正しくありません。");
     }
 
     return data.items
@@ -601,12 +525,9 @@ async function searchYouTubeVideos(query) {
                     ""
             };
         })
-        .filter(video =>
-            /^[a-zA-Z0-9_-]{11}$/.test(video.id)
-        )
-        .slice(0, 50);
+        .filter(video => /^[a-zA-Z0-9_-]{11}$/.test(video.id))
+        .slice(0, MAX_YOUTUBE_RESULTS);
 }
-
 
 // ========================================
 // YouTube Search: Prepare Results
@@ -614,19 +535,14 @@ async function searchYouTubeVideos(query) {
 
 function renderYouTubeSearchResults(videos) {
     const container = getElement("youtube-search-results");
-
     if (!container) return;
 
-    if (youtubeLoadObserver) {
-        youtubeLoadObserver.disconnect();
-        youtubeLoadObserver = null;
-    }
-
     allYouTubeResults = Array.isArray(videos)
-        ? videos.slice(0, 50)
+        ? videos.slice(0, MAX_YOUTUBE_RESULTS)
         : [];
 
     displayedYouTubeCount = 0;
+
     container.replaceChildren();
 
     const oldControls = getElement("youtube-load-controls");
@@ -640,7 +556,6 @@ function renderYouTubeSearchResults(videos) {
         return;
     }
 
-    // Separate controls from the card grid.
     const controls = document.createElement("div");
     controls.id = "youtube-load-controls";
     controls.className = "youtube-load-controls";
@@ -654,45 +569,13 @@ function renderYouTubeSearchResults(videos) {
     button.type = "button";
     button.textContent = "さらに8件表示";
 
-    const sentinel = document.createElement("div");
-    sentinel.id = "youtube-load-sentinel";
-    sentinel.setAttribute("aria-hidden", "true");
-
-    controls.append(status, button, sentinel);
+    controls.append(status, button);
     container.after(controls);
 
-    button.addEventListener("click", () => {
-        renderNextYouTubeBatch();
-    });
+    button.addEventListener("click", renderNextYouTubeBatch);
 
-        // Show the first 8 immediately.
+    // Display the first 8 results.
     renderNextYouTubeBatch();
-}
-
-// ========================================
-// YouTube Search: Show 8 at a Time
-// ========================================
-
-function renderNextYouTubeBatch() {
-
-    // Automatically show more when the user scrolls near the bottom.
-// Automatically show more when the user scrolls near the bottom.
-if ("IntersectionObserver" in window) {
-    youtubeLoadObserver = new IntersectionObserver(entries => {
-        if (
-            entries.some(entry => entry.isIntersecting) &&
-            displayedYouTubeCount < allYouTubeResults.length
-        ) {
-            renderNextYouTubeBatch();
-        }
-    }, {
-        root: null,
-        rootMargin: "300px",
-        threshold: 0
-    });
-
-    youtubeLoadObserver.observe(sentinel);
-}
 }
 
 // ========================================
@@ -720,10 +603,7 @@ function renderNextYouTubeBatch() {
         card.className = "youtube-result-item";
         card.tabIndex = 0;
         card.setAttribute("role", "button");
-        card.setAttribute(
-            "aria-label",
-            `Play ${video.title}`
-        );
+        card.setAttribute("aria-label", `Play ${video.title}`);
 
         const image = document.createElement("img");
         image.className = "youtube-result-thumbnail";
@@ -793,24 +673,7 @@ function renderNextYouTubeBatch() {
         button.hidden =
             displayedYouTubeCount >= allYouTubeResults.length;
     }
-
-    const sentinel = getElement("youtube-load-sentinel");
-
-    if (
-        displayedYouTubeCount >= allYouTubeResults.length &&
-        youtubeLoadObserver
-    ) {
-        youtubeLoadObserver.disconnect();
-        youtubeLoadObserver = null;
-    } else if (
-        sentinel &&
-        youtubeLoadObserver
-    ) {
-        // The observer remains active for the next batch.
-        youtubeLoadObserver.observe(sentinel);
-    }
 }
-
 
 // ========================================
 // YouTube Search: Display Status
@@ -837,13 +700,15 @@ function updateYouTubeDisplayStatus() {
     }
 }
 
-
 // ========================================
 // YouTube Search: Form Handler
 // ========================================
 
 async function handleYouTubeSearch(event) {
-    event?.preventDefault();
+    // Prevent the browser from navigating to "/?".
+    if (event) {
+        event.preventDefault();
+    }
 
     if (youtubeSearchInProgress) return;
 
@@ -864,11 +729,6 @@ async function handleYouTubeSearch(event) {
         return;
     }
 
-    if (!WORKER_URL.startsWith("https://")) {
-        status.textContent = "Worker URLの設定を確認してください。";
-        return;
-    }
-
     youtubeSearchInProgress = true;
 
     if (button) {
@@ -879,13 +739,16 @@ async function handleYouTubeSearch(event) {
     status.textContent = "YouTubeを検索しています...";
     results.replaceChildren();
 
+    const oldControls = getElement("youtube-load-controls");
+    if (oldControls) oldControls.remove();
+
     try {
         const videos = await searchYouTubeVideos(query);
 
         renderYouTubeSearchResults(videos);
 
         status.textContent =
-            `${videos.length} 件の動画を取得しました。スクロールすると続きを表示します。`;
+            `${videos.length} 件の動画を取得しました。`;
     } catch (error) {
         console.error("YouTube search failed:", error);
 
@@ -901,7 +764,6 @@ async function handleYouTubeSearch(event) {
     }
 }
 
-
 // ========================================
 // Initialize
 // ========================================
@@ -910,29 +772,21 @@ function initializeVideoPlayer() {
     const searchForm = getElement("youtube-search-form");
 
     if (searchForm) {
-        searchForm.addEventListener(
-            "submit",
-            handleYouTubeSearch
-        );
+        // Capture the submit event before the browser navigates.
+        searchForm.addEventListener("submit", handleYouTubeSearch);
     }
 
     const searchButton = getElement("youtube-search-button");
 
     if (searchButton && !searchForm) {
-        searchButton.addEventListener(
-            "click",
-            handleYouTubeSearch
-        );
+        searchButton.addEventListener("click", handleYouTubeSearch);
     }
 
     const urlInput = getElement("url");
 
     if (urlInput) {
         urlInput.addEventListener("keydown", event => {
-            if (
-                event.key === "Enter" &&
-                !event.isComposing
-            ) {
+            if (event.key === "Enter" && !event.isComposing) {
                 event.preventDefault();
                 loadVideo();
             }
