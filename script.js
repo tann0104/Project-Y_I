@@ -962,123 +962,618 @@ if (urlInput) {
 renderHistory();
 
 // ========================================
+// Video Player
+// YouTube + TikTok
 // YouTube Search via Cloudflare Worker
 // ========================================
 
+// ========================================
+// Configuration
+// ========================================
+
+// Cloudflare Worker URL
+// 必ず実際のWorker URLと一致させてください。
 const WORKER_URL =
-    "project-y-i2.tann0104.workers.dev";
+    "https://project-y-i2.tann0104.workers.dev";
 
-async function searchYouTubeVideos(query) {
-    const status = document.getElementById(
-        "youtube-search-status"
-    );
-    const results = document.getElementById(
-        "youtube-search-results"
-    );
-    const button = document.getElementById(
-        "youtube-search-button"
-    );
+const HISTORY_KEY = "youtubeHistory";
+const MAX_HISTORY = 50;
 
-    if (!status || !results || !button) {
-        console.error("Search HTML elements are missing.");
+let youtubeSearchInProgress = false;
+
+
+// ========================================
+// Load Video
+// ========================================
+
+function loadVideo(videoInput = null) {
+    const input = String(
+        videoInput ?? document.getElementById("url")?.value ?? ""
+    ).trim();
+
+    if (!input) {
+        alert("URL or video IDを入力してください。");
         return;
     }
 
-    query = String(query || "").trim();
-
-    if (!query) {
-        status.textContent = "検索キーワードを入力してください。";
-        return;
+    if (isTikTok(input)) {
+        loadTikTok(input);
+    } else {
+        loadYouTube(input);
     }
+}
 
-    status.textContent = "検索中...";
-    button.disabled = true;
-    results.replaceChildren();
+
+// ========================================
+// YouTube URL Parser
+// ========================================
+
+function parseYouTubeVideo(input) {
+    const value = String(input).trim();
+
+    // Direct video ID
+    if (/^[a-zA-Z0-9_-]{11}$/.test(value)) {
+        return {
+            id: value,
+            isShorts: false
+        };
+    }
 
     try {
-        const url = new URL(WORKER_URL);
-        url.searchParams.set("q", query);
+        const url = new URL(
+            /^https?:\/\//i.test(value)
+                ? value
+                : `https://${value}`
+        );
 
-        const response = await fetch(url);
-        const data = await response.json();
+        const hostname = url.hostname
+            .replace(/^www\./i, "")
+            .toLowerCase();
 
-        if (!response.ok) {
-            throw new Error(
-                `${data.error || "Search failed"} (${data.reason || response.status})`
+        let videoId = "";
+        let isShorts = false;
+
+        if (
+            hostname === "youtube.com" ||
+            hostname === "m.youtube.com" ||
+            hostname === "music.youtube.com"
+        ) {
+            const match = url.pathname.match(
+                /^\/(embed|shorts|live)\/([^/?#]+)/
             );
+
+            if (match) {
+                videoId = match[2];
+                isShorts = match[1] === "shorts";
+            } else {
+                videoId = url.searchParams.get("v") || "";
+            }
+        } else if (hostname === "youtu.be") {
+            videoId =
+                url.pathname.split("/").filter(Boolean)[0] || "";
+        } else if (hostname === "youtube-nocookie.com") {
+            const match = url.pathname.match(
+                /^\/embed\/([^/?#]+)/
+            );
+
+            if (match) {
+                videoId = match[1];
+            }
         }
 
-        const videos = Array.isArray(data.items)
-            ? data.items
-            : [];
-
-        if (videos.length === 0) {
-            status.textContent = "動画が見つかりませんでした。";
-            return;
+        if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+            return null;
         }
 
-        for (const video of videos) {
-            const card = document.createElement("article");
-            card.className = "youtube-result-item";
-
-            const image = document.createElement("img");
-            image.src = video.thumbnail || "";
-            image.alt = "";
-            image.loading = "lazy";
-
-            const info = document.createElement("div");
-            info.className = "youtube-result-info";
-
-            const title = document.createElement("strong");
-            title.textContent = video.title || "Untitled";
-
-            const channel = document.createElement("p");
-            channel.textContent = video.channel || "";
-
-            const playButton = document.createElement("button");
-            playButton.type = "button";
-            playButton.textContent = "▶ 再生";
-
-            playButton.addEventListener("click", () => {
-                loadYouTube(video.id);
-                document.getElementById("player")
-                    ?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center"
-                    });
-            });
-
-            info.append(title, channel, playButton);
-            card.append(image, info);
-            results.appendChild(card);
-        }
-
-        status.textContent =
-            `${videos.length} 件の動画が見つかりました。`;
-
+        return {
+            id: videoId,
+            isShorts
+        };
     } catch (error) {
-        console.error("YouTube search failed:", error);
-        status.textContent =
-            "検索に失敗しました。設定を確認してください。";
-    } finally {
-        button.disabled = false;
+        console.error("YouTube URL parsing error:", error);
+        return null;
     }
 }
 
-const youtubeSearchForm = document.getElementById(
-    "youtube-search-form"
-);
 
-if (youtubeSearchForm) {
-    youtubeSearchForm.addEventListener("submit", event => {
-        event.preventDefault();
+// ========================================
+// Load YouTube
+// ========================================
 
-        const input = document.getElementById(
-            "youtube-search-input"
+function loadYouTube(input) {
+    const video = parseYouTubeVideo(input);
+
+    if (!video) {
+        console.error("Invalid YouTube input:", input);
+        alert("Invalid YouTube video ID or URL.");
+        return;
+    }
+
+    const player = document.getElementById("player");
+
+    if (!player) {
+        console.error('Element "#player" was not found.');
+        return;
+    }
+
+    player.replaceChildren();
+
+    player.className = video.isShorts
+        ? "shorts-player"
+        : "normal-player";
+
+    const iframe = document.createElement("iframe");
+
+    iframe.src =
+        `https://www.youtube-nocookie.com/embed/${video.id}`;
+
+    iframe.title = "YouTube video player";
+
+    iframe.allow =
+        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+
+    iframe.allowFullscreen = true;
+
+    iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+    player.appendChild(iframe);
+
+    addHistory(video.id, video.isShorts, "youtube");
+}
+
+
+// ========================================
+// TikTok Detection
+// ========================================
+
+function isTikTok(input) {
+    const value = String(input).trim();
+
+    try {
+        const url = new URL(
+            /^https?:\/\//i.test(value)
+                ? value
+                : `https://${value}`
         );
 
-        if (input) {
-            searchYouTubeVideos(input.value);
+        const hostname = url.hostname
+            .replace(/^www\./i, "")
+            .toLowerCase();
+
+        return (
+            hostname === "tiktok.com" ||
+            hostname.endsWith(".tiktok.com")
+        );
+    } catch {
+        return false;
+    }
+}
+
+
+// ========================================
+// Parse TikTok Video ID
+// ========================================
+
+function parseTikTokVideoId(input) {
+    const value = String(input).trim();
+
+    // Allow a numeric ID directly.
+    if (/^\d+$/.test(value)) {
+        return value;
+    }
+
+    try {
+        const url = new URL(
+            /^https?:\/\//i.test(value)
+                ? value
+                : `https://${value}`
+        );
+
+        const hostname = url.hostname
+            .replace(/^www\./i, "")
+            .toLowerCase();
+
+        if (
+            hostname !== "tiktok.com" &&
+            !hostname.endsWith(".tiktok.com")
+        ) {
+            return null;
         }
+
+        // https://www.tiktok.com/player/v1/VIDEO_ID
+        const playerMatch = url.pathname.match(
+            /^\/player\/v1\/(\d+)/
+        );
+
+        if (playerMatch) {
+            return playerMatch[1];
+        }
+
+        // https://www.tiktok.com/@user/video/VIDEO_ID
+        const videoMatch = url.pathname.match(
+            /\/video\/(\d+)/
+        );
+
+        if (videoMatch) {
+            return videoMatch[1];
+        }
+
+        // Short links such as vm.tiktok.com may redirect.
+        // This parser does not resolve redirects itself.
+        return null;
+    } catch (error) {
+        console.error("TikTok URL parsing error:", error);
+        return null;
+    }
+}
+
+
+// ========================================
+// Load TikTok
+// ========================================
+
+function loadTikTok(input) {
+    const videoId = parseTikTokVideoId(input);
+
+    if (!videoId) {
+        console.error("Invalid TikTok input:", input);
+        alert(
+            "Invalid TikTok video URL. Use a video URL containing /video/VIDEO_ID."
+        );
+        return;
+    }
+
+    const player = document.getElementById("player");
+
+    if (!player) {
+        console.error('Element "#player" was not found.');
+        return;
+    }
+
+    player.replaceChildren();
+    player.className = "tiktok-player";
+
+    const iframe = document.createElement("iframe");
+
+    iframe.src =
+        `https://www.tiktok.com/player/v1/${videoId}`;
+
+    iframe.title = "TikTok video player";
+    iframe.allow = "fullscreen";
+    iframe.allowFullscreen = true;
+
+    player.appendChild(iframe);
+
+    addHistory(videoId, false, "tiktok");
+}
+
+
+// ========================================
+// History: Read
+// ========================================
+
+function getHistory() {
+    try {
+        const saved = localStorage.getItem(HISTORY_KEY);
+        const history = JSON.parse(saved || "[]");
+
+        return Array.isArray(history) ? history : [];
+    } catch (error) {
+        console.error("Failed to read history:", error);
+        return [];
+    }
+}
+
+
+// ========================================
+// History: Save
+// ========================================
+
+function saveHistory(history) {
+    try {
+        localStorage.setItem(
+            HISTORY_KEY,
+            JSON.stringify(history)
+        );
+    } catch (error) {
+        console.error("Failed to save history:", error);
+    }
+}
+
+
+// ========================================
+// History: Add
+// ========================================
+
+function addHistory(
+    videoId,
+    isShorts = false,
+    platform = "youtube"
+) {
+    let history = getHistory();
+
+    // Remove the same video from its existing position.
+    history = history.filter(item => {
+        return !(
+            item.id === videoId &&
+            (item.platform || "youtube") === platform
+        );
+    });
+
+    // Add the newest item first.
+    history.unshift({
+        id: videoId,
+        platform,
+        title: null,
+        author: null,
+        isShorts,
+        date: new Date().toLocaleString("ja-JP")
+    });
+
+    // Keep only the latest 50 items.
+    history = history.slice(0, MAX_HISTORY);
+
+    saveHistory(history);
+    renderHistory();
+
+    if (platform === "youtube") {
+        fetchYouTubeTitle(videoId);
+    } else if (platform === "tiktok") {
+        fetchTikTokTitle(videoId);
+    }
+}
+
+
+// ========================================
+// History: Render
+// ========================================
+
+function renderHistory() {
+    const history = getHistory();
+    const container = document.getElementById("history");
+
+    if (!container) return;
+
+    container.replaceChildren();
+
+    if (history.length === 0) {
+        container.textContent = "履歴はありません。";
+        return;
+    }
+
+    history.forEach(item => {
+        const platform = item.platform || "youtube";
+
+        const element = document.createElement("div");
+        element.className = "history-item";
+
+        // Thumbnail
+        const image = document.createElement("img");
+
+        if (platform === "youtube") {
+            image.src =
+                `https://img.youtube.com/vi/${encodeURIComponent(item.id)}/mqdefault.jpg`;
+        } else {
+            image.src = "https://www.tiktok.com/favicon.ico";
+        }
+
+        image.alt = `${platform} video thumbnail`;
+        image.loading = "lazy";
+
+        image.onerror = () => {
+            image.style.display = "none";
+        };
+
+        // Information
+        const info = document.createElement("div");
+        info.className = "history-info";
+
+        const title = document.createElement("strong");
+        title.textContent = item.title || "タイトルを取得中...";
+
+        const author = document.createElement("p");
+        author.textContent = item.author || "";
+
+        const date = document.createElement("p");
+        date.textContent = item.date || "";
+
+        const platformText = document.createElement("small");
+        platformText.textContent =
+            platform === "tiktok" ? "TikTok" : "YouTube";
+
+        info.append(title, author, date, platformText);
+
+        // Play button
+        const playButton = document.createElement("button");
+        playButton.type = "button";
+        playButton.textContent = "再生";
+
+        playButton.addEventListener("click", () => {
+            if (platform === "tiktok") {
+                loadTikTok(item.id);
+            } else if (item.isShorts) {
+                loadYouTube(
+                    `https://www.youtube.com/shorts/${item.id}`
+                );
+            } else {
+                loadYouTube(item.id);
+            }
+        });
+
+        // Delete button
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.textContent = "削除";
+        deleteButton.className = "delete-button";
+
+        deleteButton.addEventListener("click", () => {
+            removeHistory(item.id, platform);
+        });
+
+        element.append(
+            image,
+            info,
+            playButton,
+            deleteButton
+        );
+
+        container.appendChild(element);
     });
 }
+
+
+// ========================================
+// Fetch YouTube Title
+// ========================================
+
+async function fetchYouTubeTitle(videoId) {
+    try {
+        const url =
+            "https://www.youtube.com/oembed?" +
+            new URLSearchParams({
+                url: `https://www.youtube.com/watch?v=${videoId}`,
+                format: "json"
+            });
+
+        const response = await fetch(url);
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        const history = getHistory().map(item => {
+            if (
+                item.id === videoId &&
+                (item.platform || "youtube") === "youtube"
+            ) {
+                return {
+                    ...item,
+                    title: data.title || "YouTube",
+                    author: data.author_name || ""
+                };
+            }
+
+            return item;
+        });
+
+        saveHistory(history);
+        renderHistory();
+    } catch (error) {
+        console.error("Failed to fetch YouTube title:", error);
+    }
+}
+
+
+// ========================================
+// Fetch TikTok Title
+// ========================================
+
+async function fetchTikTokTitle(videoId) {
+    try {
+        const url =
+            "https://www.tiktok.com/oembed?" +
+            new URLSearchParams({
+                url: `https://www.tiktok.com/player/v1/${videoId}`
+            });
+
+        const response = await fetch(url);
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        const history = getHistory().map(item => {
+            if (
+                item.id === videoId &&
+                item.platform === "tiktok"
+            ) {
+                return {
+                    ...item,
+                    title: data.title || "TikTok",
+                    author: data.author_name || ""
+                };
+            }
+
+            return item;
+        });
+
+        saveHistory(history);
+        renderHistory();
+    } catch (error) {
+        // TikTok may block browser-side oEmbed requests.
+        console.error("Failed to fetch TikTok title:", error);
+    }
+}
+
+
+// ========================================
+// History: Delete One
+// ========================================
+
+function removeHistory(videoId, platform = "youtube") {
+    const history = getHistory().filter(item => {
+        return !(
+            item.id === videoId &&
+            (item.platform || "youtube") === platform
+        );
+    });
+
+    saveHistory(history);
+    renderHistory();
+}
+
+
+// ========================================
+// History: Clear All
+// ========================================
+
+function clearHistory() {
+    if (!confirm("すべての再生履歴を削除しますか？")) {
+        return;
+    }
+
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistory();
+}
+
+
+// ========================================
+// YouTube Search via Cloudflare Worker
+// ========================================
+
+async function searchYouTubeVideos(query) {
+    const url = new URL(WORKER_URL);
+    url.searchParams.set("q", query);
+
+    const response = await fetch(url.toString());
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error(
+            "Workerから正しいJSONレスポンスが返されませんでした。"
+        );
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data.error ||
+            data.message ||
+            `Worker error: ${response.status}`
+        );
+    }
+
+    if (!Array.isArray(data.items)) {
+        throw new Error(
+            "検索結果の形式が正しくありません。Workerのコードを確認してください。"
+        );
+    }
+
+    return data.items
+        .filter(video => video.id)
+        .map(video => ({
+            id: String(video.id),
+            title: video.title || "Untitled",
+            channel: video.channel || "",
