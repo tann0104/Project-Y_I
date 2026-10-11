@@ -669,22 +669,22 @@ function renderYouTubeSearchResults(videos) {
     renderNextYouTubeBatch();
 
     // Automatically show more when the user scrolls near the bottom.
-    if ("IntersectionObserver" in window) {
-        youtubeLoadObserver = new IntersectionObserver(entries => {
-            if (
-                entries.some(entry => entry.isIntersecting) &&
-                displayedYouTubeCount < allYouTubeResults.length
-            ) {
-                renderNextYouTubeBatch();
-            }
-        }, {
-            root: null,
-            rootMargin: "300px",
-            threshold: 0
-        });
+// Automatically show more when the user scrolls near the bottom.
+if ("IntersectionObserver" in window) {
+    youtubeLoadObserver = new IntersectionObserver(entries => {
+        if (
+            entries.some(entry => entry.isIntersecting) &&
+            displayedYouTubeCount < allYouTubeResults.length
+        ) {
+            renderNextYouTubeBatch();
+        }
+    }, {
+        root: null,
+        rootMargin: "300px",
+        threshold: 0
+    });
 
-        youtubeLoadObserver.observe(sentinel);
-    }
+    youtubeLoadObserver.observe(sentinel);
 }
 
 
