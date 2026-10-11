@@ -665,8 +665,15 @@ function renderYouTubeSearchResults(videos) {
         renderNextYouTubeBatch();
     });
 
-    // Show the first 8 immediately.
+        // Show the first 8 immediately.
     renderNextYouTubeBatch();
+}
+
+// ========================================
+// YouTube Search: Show 8 at a Time
+// ========================================
+
+function renderNextYouTubeBatch() {
 
     // Automatically show more when the user scrolls near the bottom.
 // Automatically show more when the user scrolls near the bottom.
