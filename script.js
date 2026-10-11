@@ -961,3 +961,112 @@ if (urlInput) {
 
 renderHistory();
 
+// ========================================
+// YouTube Search
+// ========================================
+
+const WORKER_URL =
+    "https://YOUR-WORKER.YOUR-SUBDOMAIN.workers.dev";
+
+async function searchYouTubeVideos(query) {
+    const status = document.getElementById(
+        "youtube-search-status"
+    );
+
+    const results = document.getElementById(
+        "youtube-search-results"
+    );
+
+    const searchButton = document.getElementById(
+        "youtube-search-button"
+    );
+
+    query = String(query || "").trim();
+
+    if (!query) {
+        status.textContent = "検索キーワードを入力してください。";
+        return;
+    }
+
+    status.textContent = "検索中...";
+    results.replaceChildren();
+    searchButton.disabled = true;
+
+    try {
+        const url = new URL(WORKER_URL);
+        url.searchParams.set("q", query);
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "検索に失敗しました。"
+            );
+        }
+
+        if (!data.items || data.items.length === 0) {
+            status.textContent = "検索結果がありません。";
+            return;
+        }
+
+        for (const video of data.items) {
+            const card = document.createElement("article");
+            card.className = "youtube-result-item";
+
+            const thumbnail = document.createElement("img");
+            thumbnail.src = video.thumbnail;
+            thumbnail.alt = "";
+            thumbnail.loading = "lazy";
+
+            const info = document.createElement("div");
+            info.className = "youtube-result-info";
+
+            const title = document.createElement("strong");
+            title.textContent = video.title;
+
+            const channel = document.createElement("p");
+            channel.textContent = video.channel;
+
+            const playButton = document.createElement("button");
+            playButton.type = "button";
+            playButton.textContent = "再生";
+
+            playButton.addEventListener("click", () => {
+                loadYouTube(video.id);
+            });
+
+            info.append(title, channel, playButton);
+            card.append(thumbnail, info);
+            results.appendChild(card);
+        }
+
+        status.textContent =
+            `${data.items.length} 件の動画が見つかりました。`;
+
+    } catch (error) {
+        console.error("YouTube search error:", error);
+        status.textContent =
+            "検索に失敗しました。Worker の URL・設定・API 制限を確認してください。";
+    } finally {
+        searchButton.disabled = false;
+    }
+}
+
+// Search form
+const searchForm = document.getElementById(
+    "youtube-search-form"
+);
+
+if (searchForm) {
+    searchForm.addEventListener("submit", event => {
+        event.preventDefault();
+
+        const input = document.getElementById(
+            "youtube-search-input"
+        );
+
+        searchYouTubeVideos(input.value);
+    });
+}
+
