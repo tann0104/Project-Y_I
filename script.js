@@ -962,24 +962,29 @@ if (urlInput) {
 renderHistory();
 
 // ========================================
-// YouTube Search
+// YouTube Search via Cloudflare Worker
 // ========================================
 
 const WORKER_URL =
-    "https://project-y-i.tann0104.workers.dev/";
+    "https://project-y-i.tann0104.workers.dev";
+
+let youtubeSearchInProgress = false;
 
 async function searchYouTubeVideos(query) {
     const status = document.getElementById(
         "youtube-search-status"
     );
-
     const results = document.getElementById(
         "youtube-search-results"
     );
-
-    const searchButton = document.getElementById(
+    const button = document.getElementById(
         "youtube-search-button"
     );
+
+    if (!status || !results || !button) {
+        console.error("YouTube search HTML elements are missing.");
+        return;
+    }
 
     query = String(query || "").trim();
 
@@ -988,9 +993,12 @@ async function searchYouTubeVideos(query) {
         return;
     }
 
+    if (youtubeSearchInProgress) return;
+
+    youtubeSearchInProgress = true;
+    button.disabled = true;
     status.textContent = "検索中...";
     results.replaceChildren();
-    searchButton.disabled = true;
 
     try {
         const url = new URL(WORKER_URL);
@@ -1001,72 +1009,85 @@ async function searchYouTubeVideos(query) {
 
         if (!response.ok) {
             throw new Error(
-                data.error || "検索に失敗しました。"
+                data.error || `HTTP ${response.status}`
             );
         }
 
-        if (!data.items || data.items.length === 0) {
-            status.textContent = "検索結果がありません。";
+        const videos = Array.isArray(data.items)
+            ? data.items
+            : [];
+
+        if (videos.length === 0) {
+            status.textContent = "動画が見つかりませんでした。";
             return;
         }
 
-        for (const video of data.items) {
+        for (const video of videos) {
             const card = document.createElement("article");
             card.className = "youtube-result-item";
 
-            const thumbnail = document.createElement("img");
-            thumbnail.src = video.thumbnail;
-            thumbnail.alt = "";
-            thumbnail.loading = "lazy";
+            const image = document.createElement("img");
+            image.src = video.thumbnail || "";
+            image.alt = "";
+            image.loading = "lazy";
 
             const info = document.createElement("div");
             info.className = "youtube-result-info";
 
             const title = document.createElement("strong");
-            title.textContent = video.title;
+            title.textContent = video.title || "Untitled";
 
             const channel = document.createElement("p");
-            channel.textContent = video.channel;
+            channel.textContent = video.channel || "";
 
             const playButton = document.createElement("button");
             playButton.type = "button";
-            playButton.textContent = "再生";
+            playButton.textContent = "▶ 再生";
 
             playButton.addEventListener("click", () => {
                 loadYouTube(video.id);
+
+                document.getElementById("player")
+                    ?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                    });
             });
 
             info.append(title, channel, playButton);
-            card.append(thumbnail, info);
+            card.append(image, info);
             results.appendChild(card);
         }
 
         status.textContent =
-            `${data.items.length} 件の動画が見つかりました。`;
+            `${videos.length} 件の動画が見つかりました。`;
 
     } catch (error) {
-        console.error("YouTube search error:", error);
+        console.error("YouTube search failed:", error);
+
         status.textContent =
-            "検索に失敗しました。Worker の URL・設定・API 制限を確認してください。";
+            "検索に失敗しました。Worker の設定や API 制限を確認してください。";
+
     } finally {
-        searchButton.disabled = false;
+        youtubeSearchInProgress = false;
+        button.disabled = false;
     }
 }
 
-// Search form
-const searchForm = document.getElementById(
+const youtubeSearchForm = document.getElementById(
     "youtube-search-form"
 );
 
-if (searchForm) {
-    searchForm.addEventListener("submit", event => {
+if (youtubeSearchForm) {
+    youtubeSearchForm.addEventListener("submit", event => {
         event.preventDefault();
 
         const input = document.getElementById(
             "youtube-search-input"
         );
 
-        searchYouTubeVideos(input.value);
+        if (input) {
+            searchYouTubeVideos(input.value);
+        }
     });
 }
-
