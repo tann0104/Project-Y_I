@@ -11,24 +11,25 @@
 
     <h1>YouTube Player</h1>
 
-    
-<div class="main-container">
+    <div class="main-container">
 
-    <!-- Player -->
-    <main class="player-section">
+        <!-- Left: Player -->
+        <main class="player-section">
 
-        <div class="input-area">
-            <input
-                id="url"
-                type="text"
-                placeholder="YouTube URLまたは動画IDを入力"
-            >
-            <button onclick="loadVideo()">再生</button>
-        </div>
+            <div class="input-area">
+                <input
+                    id="url"
+                    type="text"
+                    placeholder="YouTube URLまたは動画IDを入力"
+                >
+                <button onclick="loadVideo()">再生</button>
+            </div>
 
-        <div id="player"></div>
+            <div id="player"></div>
 
-        <!-- History: Below Player -->
+        </main>
+
+        <!-- Right: History -->
         <aside class="history-section">
 
             <div class="history-header">
@@ -45,24 +46,9 @@
 
         </aside>
 
-    </main>
-
-</div>
-
-
-            <div id="player"></div>
-
-        </main>
-
-        
-
-        </aside>
-
     </div>
 
     <script src="script.js" defer></script>
 
 </body>
 </html>
-
-
