@@ -797,3 +797,73 @@ if (document.readyState === "loading") {
 } else {
     initializeVideoPlayer();
 }
+
+
+function renderYouTubeResults(items) {
+    const container = document.getElementById(
+        "youtube-search-results"
+    );
+
+    if (!container) return;
+
+    container.replaceChildren();
+
+    if (!items || items.length === 0) {
+        container.textContent = "No videos found.";
+        return;
+    }
+
+    items.forEach((video) => {
+        const card = document.createElement("article");
+        card.className = "youtube-video-card";
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.setAttribute(
+            "aria-label",
+            `Play ${video.title || "YouTube video"}`
+        );
+
+        const thumbnail = document.createElement("img");
+        thumbnail.src =
+            video.thumbnail ||
+            `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`;
+        thumbnail.alt = video.title || "Video thumbnail";
+        thumbnail.loading = "lazy";
+
+        const info = document.createElement("div");
+        info.className = "youtube-video-info";
+
+        const title = document.createElement("p");
+        title.className = "youtube-video-title";
+        title.textContent = video.title || "Untitled";
+
+        const channel = document.createElement("p");
+        channel.className = "youtube-video-channel";
+        channel.textContent = video.channel || "";
+
+        info.append(title, channel);
+        card.append(thumbnail, info);
+
+        const playVideo = () => {
+            const input = document.getElementById("url");
+            if (input) input.value =
+                `https://www.youtube.com/watch?v=${video.id}`;
+
+            // Use the existing player and history logic.
+            if (typeof loadVideo === "function") {
+                loadVideo(`https://www.youtube.com/watch?v=${video.id}`);
+            }
+        };
+
+        card.addEventListener("click", playVideo);
+        card.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                playVideo();
+            }
+        });
+
+        container.appendChild(card);
+    });
+}
+
