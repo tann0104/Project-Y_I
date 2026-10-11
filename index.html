@@ -11,6 +11,32 @@
 
     <h1>YouTube Player</h1>
 
+    
+<!-- YouTube Search -->
+<section class="youtube-search">
+    <h2>YouTube 動画検索</h2>
+
+    <form id="youtube-search-form" class="youtube-search-form">
+        <input
+            id="youtube-search-input"
+            type="search"
+            placeholder="動画名・キーワード・チャンネル名..."
+            autocomplete="off"
+            maxlength="200"
+            required
+        >
+
+        <button id="youtube-search-button" type="submit">
+            検索
+        </button>
+    </form>
+
+    <p id="youtube-search-status" role="status" aria-live="polite"></p>
+
+    <div id="youtube-search-results"></div>
+</section>
+
+
     <div class="main-container">
 
         <!-- Left: Player -->
