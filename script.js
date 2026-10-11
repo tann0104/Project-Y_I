@@ -966,9 +966,7 @@ renderHistory();
 // ========================================
 
 const WORKER_URL =
-    "https://project-y-i.tann0104.workers.dev";
-
-let youtubeSearchInProgress = false;
+    "project-y-i2.tann0104.workers.dev";
 
 async function searchYouTubeVideos(query) {
     const status = document.getElementById(
@@ -982,7 +980,7 @@ async function searchYouTubeVideos(query) {
     );
 
     if (!status || !results || !button) {
-        console.error("YouTube search HTML elements are missing.");
+        console.error("Search HTML elements are missing.");
         return;
     }
 
@@ -993,11 +991,8 @@ async function searchYouTubeVideos(query) {
         return;
     }
 
-    if (youtubeSearchInProgress) return;
-
-    youtubeSearchInProgress = true;
-    button.disabled = true;
     status.textContent = "検索中...";
+    button.disabled = true;
     results.replaceChildren();
 
     try {
@@ -1009,7 +1004,7 @@ async function searchYouTubeVideos(query) {
 
         if (!response.ok) {
             throw new Error(
-                data.error || `HTTP ${response.status}`
+                `${data.error || "Search failed"} (${data.reason || response.status})`
             );
         }
 
@@ -1046,7 +1041,6 @@ async function searchYouTubeVideos(query) {
 
             playButton.addEventListener("click", () => {
                 loadYouTube(video.id);
-
                 document.getElementById("player")
                     ?.scrollIntoView({
                         behavior: "smooth",
@@ -1064,12 +1058,9 @@ async function searchYouTubeVideos(query) {
 
     } catch (error) {
         console.error("YouTube search failed:", error);
-
         status.textContent =
-            "検索に失敗しました。Worker の設定や API 制限を確認してください。";
-
+            "検索に失敗しました。設定を確認してください。";
     } finally {
-        youtubeSearchInProgress = false;
         button.disabled = false;
     }
 }
