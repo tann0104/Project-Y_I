@@ -648,3 +648,288 @@ a:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* ========================================
+   Password Login Screen and Site Header
+   ======================================== */
+
+[hidden] {
+  display: none !important;
+}
+
+.login-screen {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+    #0b0b0d;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 410px;
+  padding: 38px;
+  background: linear-gradient(145deg, #17171a, #101012);
+  border: 1px solid #303036;
+  border-radius: 22px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.login-icon,
+.brand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #111113;
+  background: #e4e4e7;
+  font-weight: 800;
+}
+
+.login-icon {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 20px;
+  border-radius: 16px;
+  font-size: 21px;
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+  color: #85858f;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.login-card h2 {
+  margin: 0;
+  font-size: 27px;
+  letter-spacing: -0.8px;
+}
+
+.login-description {
+  margin: 10px 0 24px;
+  color: var(--text-secondary);
+}
+
+#login-form {
+  display: grid;
+  gap: 12px;
+}
+
+#login-form input {
+  width: 100%;
+  min-height: 48px;
+  text-align: center;
+}
+
+#login-form button {
+  width: 100%;
+  min-height: 48px;
+}
+
+#login-form button span {
+  font-size: 18px;
+}
+
+#login-error {
+  min-height: 20px;
+  margin: 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+#site-content {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1600px;
+  margin: 0 auto 34px;
+  text-align: left;
+}
+
+.site-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.logout-button {
+  flex: 0 0 auto;
+  background: #202024;
+  color: #e4e4e7;
+  border-color: #38383f;
+}
+
+.logout-button:hover {
+  background: #303036;
+  border-color: #52525b;
+  box-shadow: none;
+}
+
+.youtube-search {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto 28px;
+  padding: 24px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.008));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-align: left;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.section-heading h2,
+.youtube-search h2,
+.history-header h2 {
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: -0.4px;
+}
+
+.youtube-search-form {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.youtube-search-form input {
+  min-width: 0;
+  flex: 1;
+}
+
+#youtube-search-status {
+  min-height: 22px;
+  margin: 12px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.player-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: #777780;
+  text-align: center;
+}
+
+.player-placeholder span {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid #303036;
+  border-radius: 50%;
+  color: #d4d4d8;
+  font-size: 18px;
+}
+
+.player-placeholder p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.site-footer {
+  margin: 32px auto 0;
+  color: #71717a;
+  font-size: 11px;
+  text-align: center;
+}
+
+.site-footer span {
+  padding: 0 5px;
+  color: #a1a1aa;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 800px) {
+  .site-header {
+    margin-bottom: 24px;
+  }
+
+  .youtube-search {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+}
+
+@media (max-width: 500px) {
+  .login-card {
+    padding: 28px 20px;
+  }
+
+  .site-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .site-header h1 {
+    gap: 8px;
+    font-size: 23px;
+  }
+
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .logout-button {
+    min-height: 38px;
+    padding: 0 12px;
+  }
+
+  .youtube-search-form {
+    flex-wrap: wrap;
+  }
+
+  .youtube-search-form input {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .youtube-search-form button {
+    width: 100%;
+  }
+}
