@@ -5,37 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Player</title>
     <link rel="stylesheet" href="style.css">
+
+    <script>
+        const PASSWORD = "password000";
+
+        const input = prompt("パスワードを入力してください");
+
+        if (input !== PASSWORD) {
+            document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>アクセス拒否</title>
+                    <style>
+                        body{
+                            margin:0;
+                            display:flex;
+                            justify-content:center;
+                            align-items:center;
+                            height:100vh;
+                            background:#111;
+                            color:white;
+                            font-family:sans-serif;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>アクセス拒否</h1>
+                </body>
+                </html>
+            `);
+            throw new Error("Access Denied");
+        }
+    </script>
 </head>
 
 <body>
 
     <h1>YouTube Player</h1>
 
-    
-<!-- YouTube Search -->
-<section class="youtube-search">
-    <h2>YouTube 動画検索　　※絶対に連打しないでください。最悪の場合、使えなくなります。試験運用中</h2>
+    <!-- YouTube Search -->
+    <section class="youtube-search">
+        <h2>YouTube 動画検索 ※絶対に連打しないでください。最悪の場合、使えなくなります。試験運用中</h2>
 
-    <form id="youtube-search-form" class="youtube-search-form">
-        <input
-            id="youtube-search-input"
-            type="search"
-            placeholder="動画名・キーワード・チャンネル名..."
-            autocomplete="off"
-            maxlength="200"
-            required
-        >
+        <form id="youtube-search-form" class="youtube-search-form">
+            <input
+                id="youtube-search-input"
+                type="search"
+                placeholder="動画名・キーワード・チャンネル名..."
+                autocomplete="off"
+                maxlength="200"
+                required
+            >
 
-        <button id="youtube-search-button" type="submit">
-            検索
-        </button>
-    </form>
+            <button id="youtube-search-button" type="submit">
+                検索
+            </button>
+        </form>
 
-    <p id="youtube-search-status" role="status" aria-live="polite"></p>
+        <p id="youtube-search-status" role="status" aria-live="polite"></p>
 
-    <div id="youtube-search-results"></div>
-</section>
-
+        <div id="youtube-search-results"></div>
+    </section>
 
     <div class="main-container">
 
