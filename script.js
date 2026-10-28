@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ========================================
@@ -17,6 +16,115 @@ let youtubeSearchInProgress = false;
 let allYouTubeResults = [];
 let displayedYouTubeCount = 0;
 
+
+// ========================================
+// Simple Password Gate
+// ========================================
+
+// Change this password to your own password.
+const PLAYER_PASSWORD = "TanPlayer2026";
+const AUTH_SESSION_KEY = "tanVideoPlayerAuthenticated";
+
+function setAuthenticatedView(isAuthenticated) {
+    const loginScreen = getElement("login-screen");
+    const siteContent = getElement("site-content");
+
+    if (loginScreen) loginScreen.hidden = isAuthenticated;
+    if (siteContent) siteContent.hidden = !isAuthenticated;
+
+    if (isAuthenticated) {
+        const error = getElement("login-error");
+        if (error) error.textContent = "";
+    }
+}
+
+function initializeLogin() {
+    const loginForm = getElement("login-form");
+    const passwordInput = getElement("login-password");
+    const loginError = getElement("login-error");
+    const logoutButton = getElement("logout-button");
+
+    let isAuthenticated = false;
+
+    try {
+        isAuthenticated =
+            sessionStorage.getItem(AUTH_SESSION_KEY) === "true";
+    } catch (error) {
+        console.warn("Could not read session storage:", error);
+    }
+
+    setAuthenticatedView(isAuthenticated);
+
+    if (loginForm) {
+        loginForm.addEventListener("submit", event => {
+            event.preventDefault();
+
+            const enteredPassword = passwordInput?.value ?? "";
+
+            if (enteredPassword === PLAYER_PASSWORD) {
+                try {
+                    sessionStorage.setItem(AUTH_SESSION_KEY, "true");
+                } catch (error) {
+                    console.warn("Could not save login state:", error);
+                }
+
+                if (passwordInput) passwordInput.value = "";
+
+                setAuthenticatedView(true);
+            } else {
+                if (loginError) {
+                    loginError.textContent = "パスワードが違います。";
+                }
+
+                if (passwordInput) {
+                    passwordInput.value = "";
+                    passwordInput.focus();
+                }
+            }
+        });
+    }
+
+    if (logoutButton) {
+        logoutButton.addEventListener("click", () => {
+            try {
+                sessionStorage.removeItem(AUTH_SESSION_KEY);
+            } catch (error) {
+                console.warn("Could not clear login state:", error);
+            }
+
+            // Stop the current video before returning to the lock screen.
+            resetPlayerPlaceholder();
+            setAuthenticatedView(false);
+
+            if (passwordInput) {
+                passwordInput.value = "";
+                passwordInput.focus();
+            }
+        });
+    }
+}
+
+function resetPlayerPlaceholder() {
+    const player = getElement("player");
+    if (!player) return;
+
+    player.replaceChildren();
+    player.className = "normal-player";
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "player-placeholder";
+
+    const icon = document.createElement("span");
+    icon.textContent = "▶";
+
+    const message = document.createElement("p");
+    message.textContent = "動画URLを入力して再生してください";
+
+    placeholder.append(icon, message);
+    player.appendChild(placeholder);
+}
+
+
 // ========================================
 // DOM Helpers
 // ========================================
@@ -29,6 +137,7 @@ function setText(id, message) {
     const element = getElement(id);
     if (element) element.textContent = message;
 }
+
 
 // ========================================
 // YouTube URL Parser
@@ -82,6 +191,7 @@ function parseYouTubeVideo(input) {
     }
 }
 
+
 // ========================================
 // Load Video
 // ========================================
@@ -102,6 +212,7 @@ function loadVideo(videoInput = null) {
         loadYouTube(input);
     }
 }
+
 
 // ========================================
 // Load YouTube
@@ -142,8 +253,10 @@ function loadYouTube(input) {
     iframe.referrerPolicy = "strict-origin-when-cross-origin";
 
     player.appendChild(iframe);
+
     addHistory(video.id, video.isShorts, "youtube");
 }
+
 
 // ========================================
 // TikTok Detection
@@ -152,6 +265,7 @@ function loadYouTube(input) {
 function isTikTok(input) {
     try {
         const value = String(input).trim();
+
         const url = new URL(
             /^https?:\/\//i.test(value) ? value : `https://${value}`
         );
@@ -163,6 +277,7 @@ function isTikTok(input) {
         return false;
     }
 }
+
 
 // ========================================
 // TikTok URL Parser
@@ -197,6 +312,7 @@ function parseTikTokVideoId(input) {
         return null;
     }
 }
+
 
 // ========================================
 // Load TikTok
@@ -235,8 +351,10 @@ function loadTikTok(input) {
     iframe.allowFullscreen = true;
 
     player.appendChild(iframe);
+
     addHistory(videoId, false, "tiktok");
 }
+
 
 // ========================================
 // History: Read and Save
@@ -261,6 +379,7 @@ function saveHistory(history) {
         console.error("Failed to save history:", error);
     }
 }
+
 
 // ========================================
 // History: Add
@@ -292,6 +411,7 @@ function addHistory(videoId, isShorts = false, platform = "youtube") {
         fetchTikTokTitle(videoId);
     }
 }
+
 
 // ========================================
 // History: Render
@@ -327,6 +447,7 @@ function renderHistory() {
 
         image.alt = `${platform} video thumbnail`;
         image.loading = "lazy";
+
         image.onerror = () => {
             image.style.display = "none";
         };
@@ -344,7 +465,8 @@ function renderHistory() {
         date.textContent = item.date || "";
 
         const platformLabel = document.createElement("small");
-        platformLabel.textContent = platform === "tiktok" ? "TikTok" : "YouTube";
+        platformLabel.textContent =
+            platform === "tiktok" ? "TikTok" : "YouTube";
 
         info.append(title, author, date, platformLabel);
 
@@ -375,6 +497,7 @@ function renderHistory() {
         container.appendChild(element);
     });
 }
+
 
 // ========================================
 // History: Fetch Titles
@@ -450,6 +573,7 @@ async function fetchTikTokTitle(videoId) {
     }
 }
 
+
 // ========================================
 // History: Delete
 // ========================================
@@ -470,6 +594,7 @@ function clearHistory() {
     localStorage.removeItem(HISTORY_KEY);
     renderHistory();
 }
+
 
 // ========================================
 // YouTube Search: Request Worker
@@ -529,6 +654,7 @@ async function searchYouTubeVideos(query) {
         .slice(0, MAX_YOUTUBE_RESULTS);
 }
 
+
 // ========================================
 // YouTube Search: Prepare Results
 // ========================================
@@ -577,6 +703,7 @@ function renderYouTubeSearchResults(videos) {
     // Display the first 8 results.
     renderNextYouTubeBatch();
 }
+
 
 // ========================================
 // YouTube Search: Show 8 at a Time
@@ -675,6 +802,7 @@ function renderNextYouTubeBatch() {
     }
 }
 
+
 // ========================================
 // YouTube Search: Display Status
 // ========================================
@@ -700,12 +828,13 @@ function updateYouTubeDisplayStatus() {
     }
 }
 
+
 // ========================================
 // YouTube Search: Form Handler
 // ========================================
 
 async function handleYouTubeSearch(event) {
-    // Prevent the browser from navigating to "/?".
+    // Prevent the browser from navigating away from the player.
     if (event) {
         event.preventDefault();
     }
@@ -764,15 +893,17 @@ async function handleYouTubeSearch(event) {
     }
 }
 
+
 // ========================================
 // Initialize
 // ========================================
 
 function initializeVideoPlayer() {
+    initializeLogin();
+
     const searchForm = getElement("youtube-search-form");
 
     if (searchForm) {
-        // Capture the submit event before the browser navigates.
         searchForm.addEventListener("submit", handleYouTubeSearch);
     }
 
@@ -782,18 +913,32 @@ function initializeVideoPlayer() {
         searchButton.addEventListener("click", handleYouTubeSearch);
     }
 
-    const urlInput = getElement("url");
+    // Handle the video form in the supplied index.html.
+    const videoForm = getElement("video-form");
 
-    if (urlInput) {
-        urlInput.addEventListener("keydown", event => {
-            if (event.key === "Enter" && !event.isComposing) {
-                event.preventDefault();
-                loadVideo();
-            }
+    if (videoForm) {
+        videoForm.addEventListener("submit", event => {
+            event.preventDefault();
+            loadVideo();
         });
+    } else {
+        // Backward compatibility with older HTML versions.
+        const urlInput = getElement("url");
+
+        if (urlInput) {
+            urlInput.addEventListener("keydown", event => {
+                if (event.key === "Enter" && !event.isComposing) {
+                    event.preventDefault();
+                    loadVideo();
+                }
+            });
+        }
     }
 
-    const clearButton = getElement("clear-history-button");
+    // Support the current HTML ID and the older ID.
+    const clearButton =
+        getElement("clear-history") ||
+        getElement("clear-history-button");
 
     if (clearButton) {
         clearButton.addEventListener("click", clearHistory);
