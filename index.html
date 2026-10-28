@@ -1,1 +1,29 @@
-<!DOCTYPE html><html lang="ja"><head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>YouTube Player</title>    <link rel="stylesheet" href="style.css"></head><body>    <h1>YouTube Player</h1>    <!-- YouTube Search --><section class="youtube-search">    <h2>YouTube 動画検索　　※絶対に連打しないでください。最悪の場合、使えなくなります。試験運用中</h2>    <form id="youtube-search-form" class="youtube-search-form">        <input            id="youtube-search-input"            type="search"            placeholder="動画名・キーワード・チャンネル名..."            autocomplete="off"            maxlength="200"            required        >        <button id="youtube-search-button" type="submit">            検索        </button>    </form>    <p id="youtube-search-status" role="status" aria-live="polite"></p>    <div id="youtube-search-results"></div></section>    <div class="main-container">        <!-- Left: Player -->        <main class="player-section">            <div class="input-area">                <input                    id="url"                    type="text"                    placeholder="YouTube URLまたは動画IDを入力"                >                <button onclick="loadVideo()">再生</button>            </div>            <div id="player"></div>        </main>        <!-- Right: History -->        <aside class="history-section">            <div class="history-header">                <h2>再生履歴</h2>                <button onclick="clearHistory()" class="delete-all">                    すべて削除                </button>            </div>            <div id="history">                <p>履歴はありません。</p>            </div>        </aside>    </div>    <script src="script.js" defer></script></body></html>
+<body>
+    <!-- Password Login -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-card">
+            <div class="login-icon">▶</div>
+            <h2>YouTube Player</h2>
+            <p>パスワードを入力してください</p>
+
+            <form id="login-form">
+                <input
+                    id="login-password"
+                    type="password"
+                    placeholder="パスワード"
+                    autocomplete="current-password"
+                    required
+                >
+                <button type="submit">ログイン</button>
+                <p id="login-error" role="alert"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 既存サイト全体をこの要素で囲む -->
+    <div id="site-content" hidden>
+        <!-- ここに現在の h1、検索、プレイヤー、履歴を入れる -->
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
