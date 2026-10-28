@@ -1,10 +1,23 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101016">
+    <title>YouTube Player</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
 <body>
-    <!-- Password Login -->
-    <div id="login-screen" class="login-screen">
+
+    <!-- Login -->
+    <section id="login-screen" class="login-screen">
         <div class="login-card">
             <div class="login-icon">▶</div>
+            <p class="eyebrow">PRIVATE VIDEO PLAYER</p>
             <h2>YouTube Player</h2>
-            <p>パスワードを入力してください</p>
+            <p class="login-description">パスワードを入力してください</p>
 
             <form id="login-form">
                 <input
@@ -14,16 +27,90 @@
                     autocomplete="current-password"
                     required
                 >
-                <button type="submit">ログイン</button>
+                <button type="submit">ログイン <span>→</span></button>
                 <p id="login-error" role="alert"></p>
             </form>
         </div>
-    </div>
+    </section>
 
-    <!-- 既存サイト全体をこの要素で囲む -->
+    <!-- Main site -->
     <div id="site-content" hidden>
-        <!-- ここに現在の h1、検索、プレイヤー、履歴を入れる -->
+        <header class="site-header">
+            <h1><span class="brand-icon">▶</span> YouTube Player</h1>
+            <button id="logout-button" class="logout-button">ロック</button>
+        </header>
+
+        <section class="youtube-search">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">DISCOVER VIDEOS</p>
+                    <h2>YouTube 動画検索</h2>
+                </div>
+            </div>
+
+            <form id="youtube-search-form" class="youtube-search-form">
+                <input
+                    id="youtube-search-input"
+                    type="search"
+                    placeholder="動画名・キーワード・チャンネル名..."
+                    autocomplete="off"
+                    maxlength="200"
+                    required
+                >
+                <button id="youtube-search-button" type="submit">検索</button>
+            </form>
+
+            <p id="youtube-search-status" role="status" aria-live="polite"></p>
+            <div id="youtube-search-results"></div>
+        </section>
+
+        <div class="main-container">
+            <main class="player-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">NOW PLAYING</p>
+                        <h2>動画プレイヤー</h2>
+                    </div>
+                </div>
+
+                <form id="video-form" class="input-area">
+                    <input
+                        id="url"
+                        type="text"
+                        placeholder="YouTube URLまたは動画IDを入力"
+                        autocomplete="url"
+                        required
+                    >
+                    <button type="submit">再生</button>
+                </form>
+
+                <div id="player" class="normal-player">
+                    <div class="player-placeholder">
+                        <span>▶</span>
+                        <p>動画URLを入力して再生してください</p>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="history-section">
+                <div class="history-header">
+                    <div>
+                        <p class="eyebrow">YOUR VIDEOS</p>
+                        <h2>再生履歴</h2>
+                    </div>
+                    <button id="clear-history" class="delete-all">すべて削除</button>
+                </div>
+
+                <div id="history">
+                    <p class="empty-history">履歴はありません。</p>
+                </div>
+            </aside>
+        </div>
+
+        <footer class="site-footer">
+            <p>YouTube Player <span>·</span> Made for your viewing</p>
+        </footer>
     </div>
 
-    <script src="script.js" defer></script>
 </body>
+</html>
