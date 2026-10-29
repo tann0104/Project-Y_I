@@ -22,7 +22,7 @@ let displayedYouTubeCount = 0;
 // ========================================
 
 // Change this password to your own password.
-const PLAYER_PASSWORD = "TanPlayer2026";
+const PLAYER_PASSWORD = "Tann0104";
 const AUTH_SESSION_KEY = "tanVideoPlayerAuthenticated";
 
 function setAuthenticatedView(isAuthenticated) {
