@@ -22,8 +22,22 @@ let displayedYouTubeCount = 0;
 // ========================================
 
 // Change this password to your own password.
+
+// ========================================
+// Simple Password Gate + 3-attempt lockout
+// ========================================
+
+// パスワード（現在の設定を維持）
 const PLAYER_PASSWORD = "Tann0104";
+
 const AUTH_SESSION_KEY = "tanVideoPlayerAuthenticated";
+const LOGIN_FAILURES_KEY = "tanVideoPlayerLoginFailures";
+const LOGIN_LOCK_UNTIL_KEY = "tanVideoPlayerLoginLockUntil";
+
+const MAX_LOGIN_FAILURES = 3;
+const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000; // 15分
+
+let loginLockTimer = null;
 
 function setAuthenticatedView(isAuthenticated) {
     const loginScreen = getElement("login-screen");
@@ -38,6 +52,98 @@ function setAuthenticatedView(isAuthenticated) {
     }
 }
 
+function getLoginLockUntil() {
+    try {
+        return Number(localStorage.getItem(LOGIN_LOCK_UNTIL_KEY)) || 0;
+    } catch (error) {
+        console.warn(error);
+        return 0;
+    }
+}
+
+function getLoginFailures() {
+    try {
+        return Number(localStorage.getItem(LOGIN_FAILURES_KEY)) || 0;
+    } catch (error) {
+        console.warn(error);
+        return 0;
+    }
+}
+
+function setLoginFailures(count) {
+    try {
+        localStorage.setItem(LOGIN_FAILURES_KEY, String(count));
+    } catch (error) {
+        console.warn(error);
+    }
+}
+
+function clearLoginFailures() {
+    try {
+        localStorage.removeItem(LOGIN_FAILURES_KEY);
+        localStorage.removeItem(LOGIN_LOCK_UNTIL_KEY);
+    } catch (error) {
+        console.warn(error);
+    }
+}
+
+function updateLoginLockUI() {
+    const loginForm = getElement("login-form");
+    const passwordInput = getElement("login-password");
+    const loginError = getElement("login-error");
+
+    const submitButton = loginForm?.querySelector(
+        'button[type="submit"], input[type="submit"]'
+    );
+
+    const remainingMs = getLoginLockUntil() - Date.now();
+
+    if (remainingMs > 0) {
+        const totalSeconds = Math.ceil(remainingMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        if (loginError) {
+            loginError.textContent =
+                `ログインをロックしています。あと${minutes}分${seconds}秒お待ちください。`;
+        }
+
+        if (passwordInput) passwordInput.disabled = true;
+        if (submitButton) submitButton.disabled = true;
+
+        return true;
+    }
+
+    if (getLoginLockUntil() !== 0) {
+        clearLoginFailures();
+    }
+
+    if (passwordInput) passwordInput.disabled = false;
+    if (submitButton) submitButton.disabled = false;
+
+    if (loginLockTimer !== null) {
+        clearInterval(loginLockTimer);
+        loginLockTimer = null;
+    }
+
+    return false;
+}
+
+function startLoginLockTimer() {
+    if (loginLockTimer !== null) {
+        clearInterval(loginLockTimer);
+    }
+
+    updateLoginLockUI();
+
+    loginLockTimer = setInterval(() => {
+        if (!updateLoginLockUI()) {
+            clearInterval(loginLockTimer);
+            loginLockTimer = null;
+        }
+    }, 1000);
+}
+
 function initializeLogin() {
     const loginForm = getElement("login-form");
     const passwordInput = getElement("login-password");
@@ -50,35 +156,73 @@ function initializeLogin() {
         isAuthenticated =
             sessionStorage.getItem(AUTH_SESSION_KEY) === "true";
     } catch (error) {
-        console.warn("Could not read session storage:", error);
+        console.warn(error);
     }
 
     setAuthenticatedView(isAuthenticated);
+
+    if (!isAuthenticated && getLoginLockUntil() > Date.now()) {
+        startLoginLockTimer();
+    } else if (
+        getLoginLockUntil() !== 0 &&
+        getLoginLockUntil() <= Date.now()
+    ) {
+        clearLoginFailures();
+    }
 
     if (loginForm) {
         loginForm.addEventListener("submit", event => {
             event.preventDefault();
 
+            // ロック中ならログインさせない
+            if (updateLoginLockUI()) return;
+
             const enteredPassword = passwordInput?.value ?? "";
 
             if (enteredPassword === PLAYER_PASSWORD) {
+                clearLoginFailures();
+
                 try {
                     sessionStorage.setItem(AUTH_SESSION_KEY, "true");
                 } catch (error) {
-                    console.warn("Could not save login state:", error);
+                    console.warn(error);
                 }
 
                 if (passwordInput) passwordInput.value = "";
 
                 setAuthenticatedView(true);
-            } else {
-                if (loginError) {
-                    loginError.textContent = "パスワードが違います。";
-                }
 
-                if (passwordInput) {
-                    passwordInput.value = "";
-                    passwordInput.focus();
+            } else {
+                const failures = getLoginFailures() + 1;
+
+                if (failures >= MAX_LOGIN_FAILURES) {
+                    try {
+                        localStorage.setItem(
+                            LOGIN_LOCK_UNTIL_KEY,
+                            String(Date.now() + LOGIN_LOCK_DURATION_MS)
+                        );
+
+                        setLoginFailures(MAX_LOGIN_FAILURES);
+                    } catch (error) {
+                        console.warn(error);
+                    }
+
+                    if (passwordInput) passwordInput.value = "";
+
+                    startLoginLockTimer();
+
+                } else {
+                    setLoginFailures(failures);
+
+                    if (loginError) {
+                        loginError.textContent =
+                            `パスワードが違います。（${failures}/${MAX_LOGIN_FAILURES}回）`;
+                    }
+
+                    if (passwordInput) {
+                        passwordInput.value = "";
+                        passwordInput.focus();
+                    }
                 }
             }
         });
@@ -89,10 +233,9 @@ function initializeLogin() {
             try {
                 sessionStorage.removeItem(AUTH_SESSION_KEY);
             } catch (error) {
-                console.warn("Could not clear login state:", error);
+                console.warn(error);
             }
 
-            // Stop the current video before returning to the lock screen.
             resetPlayerPlaceholder();
             setAuthenticatedView(false);
 
@@ -100,9 +243,14 @@ function initializeLogin() {
                 passwordInput.value = "";
                 passwordInput.focus();
             }
+
+            if (getLoginLockUntil() > Date.now()) {
+                startLoginLockTimer();
+            }
         });
     }
 }
+
 
 function resetPlayerPlaceholder() {
     const player = getElement("player");
