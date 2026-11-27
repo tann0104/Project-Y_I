@@ -28,7 +28,7 @@ let displayedYouTubeCount = 0;
 // ========================================
 
 // パスワード（現在の設定を維持）
-const PLAYER_PASSWORD = "Tann0104";
+const PLAYER_PASSWORD = "password0000";
 
 const AUTH_SESSION_KEY = "tanVideoPlayerAuthenticated";
 const LOGIN_FAILURES_KEY = "tanVideoPlayerLoginFailures";
